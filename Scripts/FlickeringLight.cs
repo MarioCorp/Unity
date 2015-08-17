@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------
- * 
+ * Version 2.0
  * Flickering Light * (C)2015 Michailidis Marios
  * 
  * ma.michailidis@gmail.com	
@@ -25,23 +25,20 @@ public class FlickeringLight : MonoBehaviour {
 	public float MinimumIntensity = 0.0F;
 	[Range(0.0f, 8.0f)]
 	public float MaximumIntensity = 8.0F;
+	[Space(10)]
+	[Tooltip("Checked = Random flickering between selected min & max intensity values\r\nUnChecked = Smooth flickering between intensity values")]
+	[Range(0.0f, 1.0f)]
+	public float FlickeringRandomness;
 	public enum LightSelection {Flickering = 0, Fluorecent = 1};
 	[Header("Light Type Selection :", order=0)]
 	[Space(5, order=1)]
 	public LightSelection LightType = LightSelection.Flickering;
-	[Header("Flickering Light Settings :", order=0)]
+	[Header("Light Speed Settings :", order=0)]
 	[Space(5, order=1)]
-	[Tooltip("Checked = Random flickering between selected min & max intensity values\r\nUnChecked = Smooth flickering between intensity values")]
-	[Range(0.0f, 1.0f)]
-	public float FlickeringRandomness;
-	public float FlickeringSpeed = 0.5f;
-	public float FlickeringSpeedOffset;
-	[Header("Speed Settings :", order=0)]
-	[Space(5, order=1)]
+	public float Speed;
+	public float SpeedOffset;
 	[Range(0.0f, 1.0f)]
 	public float SpeedFluctuation;
-	[Space(5)]
-	public bool SmoothingEffect;
 	[Space(5)]
 	[Header("Movement Settings :")]
 	public MovementSettings XAxis;
@@ -57,6 +54,10 @@ public class FlickeringLight : MonoBehaviour {
 	float yPos, yMin, yMax;
 	bool zStart, zEnd;
 	float zPos, zMin, zMax;
+	
+	float targetIntensity;
+	float timePassed;
+	float actionTime;
 
 	[System.Serializable]
 	public class MovementSettings{
@@ -93,6 +94,12 @@ public class FlickeringLight : MonoBehaviour {
 	void LightMovement()
 	{
 		if (XAxis.EnableMovement) {
+			if (xMax > XAxis.MaximumOffset)
+				xMax = XAxis.MaximumOffset;
+
+			if (xMin < XAxis.MinimumOffset)
+				xMin = XAxis.MinimumOffset;
+
 			if (transform.position.x >= xMax)
 			{
 				xEnd = true;
@@ -135,6 +142,12 @@ public class FlickeringLight : MonoBehaviour {
 		}
 
 		if (YAxis.EnableMovement) {
+			if (yMax > YAxis.MaximumOffset)
+				yMax = YAxis.MaximumOffset;
+			
+			if (yMin < YAxis.MinimumOffset)
+				yMin = YAxis.MinimumOffset;
+
 			if (transform.position.y >= yMax)
 			{
 				yEnd = true;
@@ -177,6 +190,12 @@ public class FlickeringLight : MonoBehaviour {
 		}
 
 		if (ZAxis.EnableMovement) {
+			if (zMax > ZAxis.MaximumOffset)
+				zMax = ZAxis.MaximumOffset;
+			
+			if (zMin < ZAxis.MinimumOffset)
+				zMin = ZAxis.MinimumOffset;
+
 			if (transform.position.z >= zMax)
 			{
 				zEnd = true;
@@ -221,47 +240,51 @@ public class FlickeringLight : MonoBehaviour {
 
 	void LightIntensity()
 	{
-		float intentisy = 0.0f;
-		
-		switch (LightType) {
-		case LightSelection.Flickering:
-			float fluctuation = 0.0f;
-			float randomSpeed = 0.0f;
-			float randomFlick = 0.0f;
+		timePassed += Time.deltaTime;
+		float intensity = myLight.intensity;
+		float currentSpeed = Speed;
 
-			if (SpeedFluctuation == 0.0f)
-				fluctuation = Time.unscaledTime * FlickeringSpeed * Mathf.PI;
-			else {
+		// Speed Settings
+		if (SpeedOffset > 0 && Random.Range (0.0f, 1.1f) < SpeedFluctuation)
+			currentSpeed = Random.Range (Speed, SpeedOffset);
 
-				if (SmoothingEffect)
+		// Flickering Light
+		if (LightType == LightSelection.Flickering) {
+			intensity = Mathf.Lerp (intensity, targetIntensity, timePassed * currentSpeed);
+
+			// Flickering Randomness
+			if (Mathf.Abs (intensity - targetIntensity) < FlickeringRandomness) {
+				targetIntensity = Random.Range (MinimumIntensity, MaximumIntensity);
+				timePassed = 0.0f;
+			}
+
+			// Smooth Flickering
+			if (FlickeringRandomness == 0)
+				intensity = Mathf.Cos (timePassed * currentSpeed * Mathf.PI) * (MaximumIntensity - MinimumIntensity) / 2 + (MaximumIntensity + MinimumIntensity) / 2;
+		}
+		// Fluorecent Light
+		else {
+			if (Speed != 0 && timePassed > actionTime)
+			{
+				if (SpeedFluctuation == 0)
 				{
-					randomSpeed = Mathf.Lerp(FlickeringSpeed, FlickeringSpeedOffset, 1 + SpeedFluctuation);
-					fluctuation = Time.unscaledTime * randomSpeed * (1 + SpeedFluctuation);
+					if (intensity == MaximumIntensity)
+						intensity = MinimumIntensity;
+					else
+						intensity = MaximumIntensity;
 				}
 				else
 				{
-					randomSpeed = Random.Range (FlickeringSpeed, FlickeringSpeedOffset);
-					fluctuation = Time.unscaledTime * randomSpeed * (1 + SpeedFluctuation);
+					if (Random.Range(0.0f, 1.1f) < SpeedFluctuation)
+				 	   intensity = MinimumIntensity;
+					else
+						intensity = MaximumIntensity;
 				}
-			}
 
-			if (FlickeringRandomness == 0.0f)
-				intentisy = Mathf.Cos (fluctuation) * (MaximumIntensity - MinimumIntensity) / 2 + (MaximumIntensity + MinimumIntensity) / 2;
-			else if (Random.Range (0.0f, 1.0f) <= FlickeringRandomness) {
-				randomFlick = Random.Range (MinimumIntensity, MaximumIntensity);
-				intentisy = Mathf.Cos (fluctuation) * (MaximumIntensity - randomFlick) / 2 + (MaximumIntensity + randomFlick) / 2;
-			} else {
-				intentisy = (MaximumIntensity + MinimumIntensity) / 2;
+				actionTime = timePassed + (currentSpeed / 20);
 			}
-			break;
-		case LightSelection.Fluorecent:
-			if (Random.Range(0.0f, 1.1f) < SpeedFluctuation)
-				intentisy = MinimumIntensity;
-			else
-				intentisy = MaximumIntensity;
-			break;
 		}
 
-		myLight.intensity = intentisy;
+		myLight.intensity = intensity;
 	}
 }
