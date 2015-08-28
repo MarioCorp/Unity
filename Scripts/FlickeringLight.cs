@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------
- * Version 3.1
+ * Version 3.2
  * Flickering Light * (C)2015 Michailidis Marios
  * 
  * ma.michailidis@gmail.com	
@@ -19,6 +19,7 @@ using System.Collections;
 public class FlickeringLight : MonoBehaviour {
 
 	// Inspector Settings
+	[Header("Script Version : 3.2")]
 	[Space(5, order=1)]
 	[Header("Intensity Settings :", order=0)]
 	[Range(0.0f, 8.0f)]
@@ -77,18 +78,9 @@ public class FlickeringLight : MonoBehaviour {
 		myLight = gameObject.GetComponent<Light>();
 		myTransform = GetComponent(typeof(Transform)) as Transform;
 
-		xPos = myTransform.position.x;
 		xPosReset = true;
-		xMin = XAxis.MinimumOffset;
-		xMax = XAxis.MaximumOffset;
-		yPos = myTransform.position.y;
 		yPosReset = true;
-		yMin = YAxis.MinimumOffset;
-		yMax = YAxis.MaximumOffset;
-		zPos = myTransform.position.z;
 		xPosReset = true;
-		zMin = ZAxis.MinimumOffset;
-		zMax = ZAxis.MaximumOffset;
 		currentSpeed = Speed / 10;
 	}
 
@@ -108,18 +100,21 @@ public class FlickeringLight : MonoBehaviour {
 
 	void LightMovement()
 	{
-		if (XAxis.EnableMovement) {
+		if (XAxis.EnableMovement && XAxis.Speed > 0) {
 			if (xPosReset)
 			{
 				xPos = myTransform.position.x;
 				xPosReset = false;
 			}
 
-			if (xMax > XAxis.MaximumOffset)
-				xMax = XAxis.MaximumOffset;
+			float curMin = xPos + XAxis.MinimumOffset;
+			float curMax = xPos + XAxis.MaximumOffset;
 
-			if (xMin < XAxis.MinimumOffset)
-				xMin = XAxis.MinimumOffset;
+			if (xMax > curMax)
+				xMax = curMax;
+
+			if (xMin < curMin)
+				xMin = curMin;
 
 			if (transform.position.x >= xMax)
 			{
@@ -128,10 +123,10 @@ public class FlickeringLight : MonoBehaviour {
 				if (xStart && XAxis.Randomness > 0.0f)
 				{
 					if (Random.Range(0.0f, 1.1f) <= XAxis.Randomness)
-						xMax = Random.Range(xPos, XAxis.MaximumOffset);
+						xMax = xPos + Random.Range(xPos, XAxis.MaximumOffset);
 				}
 				else if (XAxis.Randomness == 0.0f)
-					xMax = XAxis.MaximumOffset;
+					xMax = curMax;
 
 				xStart = false;
 			}
@@ -142,10 +137,10 @@ public class FlickeringLight : MonoBehaviour {
 				if (XAxis.Randomness > 0.0f && !xStart)
 				{
 					if (Random.Range(0.0f, 1.1f) <= XAxis.Randomness)
-						xMin = Random.Range(xPos, XAxis.MinimumOffset);
+						xMin = xPos + Random.Range(xPos, XAxis.MinimumOffset);
 				}
 				else if (XAxis.Randomness == 0.0f)
-					xMin = XAxis.MinimumOffset;
+					xMin = curMin;
 
 				xStart = true;
 			}
@@ -156,37 +151,42 @@ public class FlickeringLight : MonoBehaviour {
 				myTransform.position = new Vector3(transform.position.x - XAxis.Speed, myTransform.position.y, myTransform.position.z);
 
 			myTransform.position = new Vector3(
-				Mathf.Clamp (myTransform.position.x, XAxis.MinimumOffset, XAxis.MaximumOffset),
+				Mathf.Clamp (myTransform.position.x, curMin, curMax),
 				myTransform.position.y,
 				myTransform.position.z
 				);
 		}
-		else
+		else if (!xPosReset)
 		{
 			myTransform.position = new Vector3(xPos, myTransform.position.y, myTransform.position.z);
+			xMin = xPos + XAxis.MinimumOffset;
+			xMax = xPos + XAxis.MaximumOffset;
 			xPosReset = true;
 		}
 
-		if (YAxis.EnableMovement) {
+		if (YAxis.EnableMovement && YAxis.Speed > 0) {
 			if (yPosReset) {
 				yPos = myTransform.position.y;
 				yPosReset = false;
 			}
 
-			if (yMax > YAxis.MaximumOffset)
-				yMax = YAxis.MaximumOffset;
+			float curMin = yPos + YAxis.MinimumOffset;
+			float curMax = yPos + YAxis.MaximumOffset;
+
+			if (yMax > curMax)
+				yMax = curMax;
 			
-			if (yMin < YAxis.MinimumOffset)
-				yMin = YAxis.MinimumOffset;
+			if (yMin < curMin)
+				yMin = curMin;
 
 			if (transform.position.y >= yMax) {
 				yEnd = true;
 
 				if (YAxis.Randomness > 0.0f && yStart) {
 					if (Random.Range (0.0f, 1.1f) <= YAxis.Randomness)
-						yMax = Random.Range (yPos, YAxis.MaximumOffset);
+						yMax = yPos + Random.Range (yPos, YAxis.MaximumOffset);
 				} else if (YAxis.Randomness == 0.0f)
-					yMax = YAxis.MaximumOffset;
+					yMax = curMax;
 				
 				yStart = false;
 			} else if (transform.position.y <= yMin) {
@@ -194,9 +194,9 @@ public class FlickeringLight : MonoBehaviour {
 
 				if (YAxis.Randomness > 0.0f && !yStart) {
 					if (Random.Range (0.0f, 1.1f) <= YAxis.Randomness)
-						yMin = Random.Range (yPos, YAxis.MinimumOffset);
+						yMin = yPos + Random.Range (YAxis.MinimumOffset, yPos);
 				} else if (YAxis.Randomness == 0.0f)
-					yMin = YAxis.MinimumOffset;
+					yMin = curMin;
 				
 				yStart = true;
 			}
@@ -208,34 +208,39 @@ public class FlickeringLight : MonoBehaviour {
 
 			myTransform.position = new Vector3 (
 				myTransform.position.x,
-				Mathf.Clamp (myTransform.position.y, YAxis.MinimumOffset, YAxis.MaximumOffset),
+				Mathf.Clamp (myTransform.position.y, curMin, curMax),
 				myTransform.position.z
 			);
-		} else {
+		} else if (!yPosReset){
 			myTransform.position = new Vector3(myTransform.position.x, yPos, myTransform.position.z);
+			yMax = yPos + YAxis.MaximumOffset;
+			yMin = yPos + YAxis.MinimumOffset;
 			yPosReset = true;
 		}
 
-		if (ZAxis.EnableMovement) {
+		if (ZAxis.EnableMovement && ZAxis.Speed > 0) {
 			if (zPosReset) {
 				zPos = myTransform.position.z;
 				zPosReset = false;
 			}
 
-			if (zMax > ZAxis.MaximumOffset)
-				zMax = ZAxis.MaximumOffset;
+			float curMax = zPos + ZAxis.MaximumOffset;
+			float curMin = zPos + ZAxis.MinimumOffset;
+
+			if (zMax > curMax)
+				zMax = curMax;
 			
-			if (zMin < ZAxis.MinimumOffset)
-				zMin = ZAxis.MinimumOffset;
+			if (zMin < curMin)
+				zMin = curMin;
 
 			if (transform.position.z >= zMax) {
 				zEnd = true;
 
 				if (ZAxis.Randomness > 0.0f && zStart) {
 					if (Random.Range (0.0f, 1.1f) <= ZAxis.Randomness)
-						zMax = Random.Range (zPos, ZAxis.MaximumOffset);
+						zMax = zPos + Random.Range (zPos, ZAxis.MaximumOffset);
 				} else if (ZAxis.Randomness == 0.0f)
-					zMax = ZAxis.MaximumOffset;
+					zMax = curMax;
 				
 				zStart = false;
 			} else if (transform.position.z <= zMin) {
@@ -243,9 +248,9 @@ public class FlickeringLight : MonoBehaviour {
 
 				if (ZAxis.Randomness > 0.0f && !zStart) {
 					if (Random.Range (0.0f, 1.1f) <= ZAxis.Randomness)
-						zMin = Random.Range (zPos, ZAxis.MinimumOffset);
+						zMin = zPos + Random.Range (zPos, ZAxis.MinimumOffset);
 				} else if (ZAxis.Randomness == 0.0f)
-					zMin = ZAxis.MinimumOffset;
+					zMin = curMin;
 
 				zStart = true;
 			}
@@ -258,10 +263,12 @@ public class FlickeringLight : MonoBehaviour {
 			myTransform.position = new Vector3 (
 				myTransform.position.x,
 				myTransform.position.y,
-				Mathf.Clamp (myTransform.position.z, ZAxis.MinimumOffset, ZAxis.MaximumOffset)
+				Mathf.Clamp (myTransform.position.z, curMin, curMax)
 			);
-		} else {
+		} else if (!zPosReset) {
 			myTransform.position = new Vector3 (myTransform.position.x, myTransform.position.y, zPos);
+			zMax = zPos + ZAxis.MaximumOffset;
+			zMin = zPos + ZAxis.MinimumOffset;
 			zPosReset = true;
 		}
 	}
@@ -322,20 +329,18 @@ public class FlickeringLight : MonoBehaviour {
 	{
 		isRunning = true;
 
-		if (myLight.intensity == MaximumIntensity) {
+		if (myLight.intensity == MinimumIntensity) {
 			if (FlickeringRandomness == 0)
-				myLight.intensity = MinimumIntensity;
+				myLight.intensity = MaximumIntensity;
 			else if (Random.Range (0.0f, 1.1f) < FlickeringRandomness)
-				myLight.intensity = MinimumIntensity;
+				myLight.intensity = Random.Range(MinimumIntensity, MaximumIntensity);
 		}
 		else
-			myLight.intensity = MaximumIntensity;
+			myLight.intensity = MinimumIntensity;
 
 		if (SpeedOffset > 0 && Random.Range(0.0f, 1.1f) < SpeedFluctuation) {
 			float curSpeed = Random.Range (Speed, SpeedOffset);
-			Debug.Log("hey");
 			yield return new WaitForSeconds (0.5f / curSpeed);
-			Debug.Log("yey!");
 		}
 		else
 			yield return new WaitForSeconds (0.5f / Mathf.Abs(Speed));
