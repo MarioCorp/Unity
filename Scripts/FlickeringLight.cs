@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------
- * Version 3.0
+ * Version 3.1
  * Flickering Light * (C)2015 Michailidis Marios
  * 
  * ma.michailidis@gmail.com	
@@ -323,15 +323,24 @@ public class FlickeringLight : MonoBehaviour {
 		isRunning = true;
 
 		if (myLight.intensity == MaximumIntensity) {
-			if (SpeedFluctuation == 0)
+			if (FlickeringRandomness == 0)
 				myLight.intensity = MinimumIntensity;
-			else if (Random.Range (0.0f, 1.1f) < SpeedFluctuation)
+			else if (Random.Range (0.0f, 1.1f) < FlickeringRandomness)
 				myLight.intensity = MinimumIntensity;
 		}
 		else
 			myLight.intensity = MaximumIntensity;
 
-		yield return new WaitForSeconds (0.5f / Mathf.Abs(Speed));
+		if (SpeedOffset > 0 && Random.Range(0.0f, 1.1f) < SpeedFluctuation) {
+			float curSpeed = Random.Range (Speed, SpeedOffset);
+			Debug.Log("hey");
+			yield return new WaitForSeconds (0.5f / curSpeed);
+			Debug.Log("yey!");
+		}
+		else
+			yield return new WaitForSeconds (0.5f / Mathf.Abs(Speed));
+
+
 		isRunning = false;
 	}
 }
