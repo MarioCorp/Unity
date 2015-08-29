@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------
- * Version 3.2
+ * Version 3.3
  * Flickering Light * (C)2015 Michailidis Marios
  * 
  * ma.michailidis@gmail.com	
@@ -19,7 +19,7 @@ using System.Collections;
 public class FlickeringLight : MonoBehaviour {
 
 	// Inspector Settings
-	[Header("Script Version : 3.2")]
+	[Header("Script Version : 3.3")]
 	[Space(5, order=1)]
 	[Header("Intensity Settings :", order=0)]
 	[Range(0.0f, 8.0f)]
@@ -137,7 +137,7 @@ public class FlickeringLight : MonoBehaviour {
 				if (XAxis.Randomness > 0.0f && !xStart)
 				{
 					if (Random.Range(0.0f, 1.1f) <= XAxis.Randomness)
-						xMin = xPos + Random.Range(xPos, XAxis.MinimumOffset);
+						xMin = xPos + Random.Range(XAxis.MinimumOffset, xPos);
 				}
 				else if (XAxis.Randomness == 0.0f)
 					xMin = curMin;
@@ -248,7 +248,7 @@ public class FlickeringLight : MonoBehaviour {
 
 				if (ZAxis.Randomness > 0.0f && !zStart) {
 					if (Random.Range (0.0f, 1.1f) <= ZAxis.Randomness)
-						zMin = zPos + Random.Range (zPos, ZAxis.MinimumOffset);
+						zMin = zPos + Random.Range (ZAxis.MinimumOffset, zPos);
 				} else if (ZAxis.Randomness == 0.0f)
 					zMin = curMin;
 
